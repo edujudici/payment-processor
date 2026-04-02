@@ -20,11 +20,12 @@ func NewApp(logger *slog.Logger) *App {
 	paymentRepo := repository.NewPaymentProcessorRepositoryMySQL(db)
 	paymentSvc := service.NewPaymentCancelService(nil)
 
-	// Usecase
-	uc := usecase.NewPaymentUseCase(paymentSvc, paymentRepo)
+	// Usecases
+	payCreateUC := usecase.NewPaymentCreateUseCase(paymentSvc, paymentRepo)
+	payGetUC := usecase.NewPaymentGetUseCase(paymentSvc, paymentRepo)
 
 	// Handler (inbound)
-	h := handler.NewPaymentProcessorHandler(uc)
+	h := handler.NewPaymentProcessorHandler(payCreateUC, payGetUC)
 
 	return &App{
 		PaymentHandler: h,

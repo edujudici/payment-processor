@@ -9,15 +9,19 @@ import (
 )
 
 type PaymentProcessorHandler struct {
-	useCase usecase.PaymentUseCaseInterface
+	payCreateUseCase usecase.PaymentCreateUseCaseInterface
+	payGetUseCase    usecase.PaymentGetUseCaseInterface
 }
 
-func NewPaymentProcessorHandler(useCase usecase.PaymentUseCaseInterface) *PaymentProcessorHandler {
-	return &PaymentProcessorHandler{useCase: useCase}
+func NewPaymentProcessorHandler(payCreateUseCase usecase.PaymentCreateUseCaseInterface, payGetUseCase usecase.PaymentGetUseCaseInterface) *PaymentProcessorHandler {
+	return &PaymentProcessorHandler{
+		payCreateUseCase: payCreateUseCase,
+		payGetUseCase:    payGetUseCase,
+	}
 }
 
 func (h *PaymentProcessorHandler) GetPayments(w http.ResponseWriter, r *http.Request) {
-	result, err := h.useCase.GetPayments(r.Context())
+	result, err := h.payGetUseCase.Execute(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -39,7 +43,7 @@ func (h *PaymentProcessorHandler) CreatePayment(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err := h.useCase.CreatePayment(r.Context(), req)
+	err := h.payCreateUseCase.Execute(r.Context(), req)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
