@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"payment-processor/internal/payment/adapters/inbound/dto"
-	"payment-processor/internal/payment/domain"
 	"payment-processor/internal/payment/ports"
-	"time"
 )
 
 type PaymentCreateUseCaseInterface interface {
-	Execute(ctx context.Context, req dto.Request) error
+	Execute(ctx context.Context, input dto.CreatePaymentInput) (*dto.CreatePaymentOutput, error)
 }
 
 type PaymentCreateUseCase struct {
@@ -28,19 +26,17 @@ func NewPaymentCreateUseCase(
 	}
 }
 
-func (uc *PaymentCreateUseCase) Execute(ctx context.Context, req dto.Request) error {
+func (uc *PaymentCreateUseCase) Execute(ctx context.Context, input dto.CreatePaymentInput) (*dto.CreatePaymentOutput, error) {
 
-	payment := &domain.Payment{
-		ID:        "generated-id",
-		Amount:    req.Amount,
-		Status:    "created",
-		CreatedAt: time.Now(),
-	}
-
-	err := uc.paymentRepository.Save(ctx, payment)
+	payment, err := dto.ToPayment(input)
 	if err != nil {
-		return fmt.Errorf("failed to create payment: %w", err)
+		return nil, fmt.Errorf("failed to create payment: %w", err)
 	}
 
-	return nil
+	err = uc.paymentRepository.Save(ctx, payment)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create payment: %w", err)
+	}
+
+	return dto.FromPayment(payment), nil
 }

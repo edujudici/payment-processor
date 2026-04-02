@@ -21,35 +21,30 @@ func NewPaymentProcessorHandler(payCreateUseCase usecase.PaymentCreateUseCaseInt
 }
 
 func (h *PaymentProcessorHandler) GetPayments(w http.ResponseWriter, r *http.Request) {
-	result, err := h.payGetUseCase.Execute(r.Context())
+	output, err := h.payGetUseCase.Execute(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, output)
 }
 
 func (h *PaymentProcessorHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
-	var req dto.Request
+	var input dto.CreatePaymentInput
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if err := req.Validate(); err != nil {
-		writeError(w, http.StatusUnprocessableEntity, err.Error())
-		return
-	}
-
-	err := h.payCreateUseCase.Execute(r.Context(), req)
+	output, err := h.payCreateUseCase.Execute(r.Context(), input)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "Payment created successfully"})
+	writeJSON(w, http.StatusOK, output)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
