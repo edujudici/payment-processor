@@ -1,32 +1,51 @@
-# ================================
-# Stage 1 — Build (Alpine)
-# ================================
-FROM public.ecr.aws/docker/library/golang:1.25.4-alpine AS build
-WORKDIR /src
+# ---- Build stage ----
+FROM golang:1.26-alpine AS base
 
-# cache modules
+WORKDIR /app
+
+RUN apk add --no-cache git
+
+# Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
+# =========================
+# 🔥 DEV (Hot Reload)
+# =========================
+FROM base AS dev
+
+RUN go install github.com/air-verse/air@latest
+
 COPY . .
 
-# static build, output named bootstrap
-ENV CGO_ENABLED=0
-RUN GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /src/bootstrap ./cmd/boleto_online_cancel
+EXPOSE 8080
 
-# ================================
-# Stage 2 — Runtime (AWS Lambda provided image)
-# ================================
-FROM public.ecr.aws/lambda/provided:al2023.2025.11.05.13
+CMD ["air"]
 
-# Copy bootstrap to locations esperados pelo Lambda/SAM
-COPY --from=build /src/bootstrap /var/runtime/bootstrap
-COPY --from=build /src/bootstrap /var/task/bootstrap
+# =========================
+# 🏗️ BUILD (produção)
+# =========================
+FROM base AS builder
 
-# give execute permissions
-RUN chmod +x /var/runtime/bootstrap /var/task/bootstrap
+COPY . .
 
-# Não expor ENTRYPOINT/CMD customizados: o rapid (SAM) e o Lambda irão executar /var/runtime/bootstrap
-# Porém podemos garantir um ENTRYPOINT direto caso alguém queira rodar a imagem sem rapid:
-ENTRYPOINT ["/var/runtime/bootstrap"]
-CMD []
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -buildvcs=false \
+    -ldflags="-s -w" \
+    -o server \
+    ./cmd/payment_processor
+
+# ---- Runtime stage ----
+FROM alpine:3.20
+
+RUN apk --no-cache add ca-certificates tzdata
+
+WORKDIR /app
+
+COPY --from=builder /app/server .
+
+EXPOSE 8080
+
+USER nobody:nobody
+
+ENTRYPOINT ["./server"]
