@@ -3,11 +3,12 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"payment-processor/internal/payment/adapters/inbound/dto"
 	"payment-processor/internal/payment/ports"
 )
 
 type PaymentGetUseCaseInterface interface {
-	Execute(ctx context.Context) (any, error)
+	Execute(ctx context.Context) (*[]dto.CreatePaymentOutput, error)
 }
 
 type PaymentGetUseCase struct {
@@ -25,12 +26,12 @@ func NewPaymentGetUseCase(
 	}
 }
 
-func (uc *PaymentGetUseCase) Execute(ctx context.Context) (any, error) {
+func (uc *PaymentGetUseCase) Execute(ctx context.Context) (*[]dto.CreatePaymentOutput, error) {
 
 	payments, err := uc.paymentRepository.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve payments: %w", err)
 	}
 
-	return payments, nil
+	return dto.FromPayments(payments), nil
 }

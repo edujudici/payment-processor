@@ -23,7 +23,7 @@ func NewPaymentProcessorRepositoryMySQL(db *sql.DB) ports.PaymentRepository {
 
 func (r *paymentProcessorRepositoryMySQL) FindAll(ctx context.Context) ([]*domain.Payment, error) {
 	query := `
-		SELECT id, amount, status, created_at
+		SELECT id, amount, status, created_at, updated_at, preference_id, description, payment_type
 		FROM payments
 	`
 
@@ -43,6 +43,10 @@ func (r *paymentProcessorRepositoryMySQL) FindAll(ctx context.Context) ([]*domai
 			&payment.Amount,
 			&payment.Status,
 			&payment.CreatedAt,
+			&payment.UpdatedAt,
+			&payment.PreferenceID,
+			&payment.Description,
+			&payment.PaymentType,
 		)
 
 		if err != nil {
@@ -61,7 +65,7 @@ func (r *paymentProcessorRepositoryMySQL) FindAll(ctx context.Context) ([]*domai
 
 func (r *paymentProcessorRepositoryMySQL) FindByID(ctx context.Context, id string) (*domain.Payment, error) {
 	query := `
-		SELECT id, amount, status, created_at
+		SELECT id, amount, status, created_at, updated_at, preference_id, description, payment_type
 		FROM payments
 		WHERE id = ?
 	`
@@ -75,6 +79,10 @@ func (r *paymentProcessorRepositoryMySQL) FindByID(ctx context.Context, id strin
 		&payment.Amount,
 		&payment.Status,
 		&payment.CreatedAt,
+		&payment.UpdatedAt,
+		&payment.PreferenceID,
+		&payment.Description,
+		&payment.PaymentType,
 	)
 
 	if err != nil {
@@ -89,8 +97,8 @@ func (r *paymentProcessorRepositoryMySQL) FindByID(ctx context.Context, id strin
 
 func (r *paymentProcessorRepositoryMySQL) Save(ctx context.Context, payment *domain.Payment) error {
 	query := `
-		INSERT INTO payments (id, amount, status, created_at)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO payments (id, amount, status, created_at, updated_at, preference_id, description, payment_type)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err := r.db.ExecContext(
@@ -100,6 +108,10 @@ func (r *paymentProcessorRepositoryMySQL) Save(ctx context.Context, payment *dom
 		payment.Amount,
 		payment.Status,
 		payment.CreatedAt,
+		payment.UpdatedAt,
+		payment.PreferenceID,
+		payment.Description,
+		payment.PaymentType,
 	)
 
 	if err != nil {

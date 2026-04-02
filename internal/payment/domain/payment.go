@@ -25,7 +25,7 @@ type Payment struct {
 	UpdatedAt    time.Time
 }
 
-func NewPayment(preferenceId string, amount float64, status Status, description, paymentType string) (*Payment, error) {
+func NewPayment(preferenceId string, amount float64, description, paymentType string) (*Payment, error) {
 
 	if amount <= 0 {
 		return nil, ErrInvalidAmount
@@ -35,7 +35,7 @@ func NewPayment(preferenceId string, amount float64, status Status, description,
 		ID:           uuid.New().String(),
 		PreferenceID: preferenceId,
 		Amount:       amount,
-		Status:       status,
+		Status:       StatusPending,
 		Description:  description,
 		PaymentType:  paymentType,
 		CreatedAt:    time.Now(),
