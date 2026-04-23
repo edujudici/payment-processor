@@ -1,0 +1,35 @@
+Backlog
+
+    OK - Landing Page
+    OK - Exibir opções de assinaturas ao cliente
+    OK - Criar estrutura base para API
+
+    OK - Utilizar o token de integração com o Mercado Pago
+    Em andamento - Criar preferencia para redirecionar o cliente para o Checkout Pro
+    - Criar Webhook para receber confirmação de pagamento
+    - Enviar notificação com dados de acesso ao sistema para o cliente
+    - Tela de login para cliente utilizar serviço (e-mail e senha)
+    - Autenticação com verificação de conta ativa
+    - Notificação de serviços expirando (e-mail)
+
+Fluxo
+    -> Landing Page
+        -> Opções de assinaturas
+            -> Checkout / Carrinho
+                -> Redireciona para Checkout Pro (Mercado Pago)
+                    -> Pagamento
+                        -> Tela de finalização de compra
+
+    -> Notificação Pagamento (Mercado PAgo)
+        -> API recebe notificação
+            -> Consolida pagamento efetuado
+                -> Envia e-mail com dados de acesso ao sistema
+
+    -> Sistema
+        -> Tela de Login (dados recebidos no e-mail)
+            -> Valida assinatura ativa
+                ->  Tela inicial
+
+
+
+

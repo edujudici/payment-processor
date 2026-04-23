@@ -1,7 +1,9 @@
 package bootstrap
 
 import (
+	"log"
 	"log/slog"
+	"os"
 	"payment-processor/internal/payment/adapters/inbound/handler"
 	"payment-processor/internal/payment/adapters/outbound/repository"
 	"payment-processor/internal/payment/adapters/outbound/service"
@@ -9,25 +11,68 @@ import (
 )
 
 type App struct {
-	PaymentHandler *handler.PaymentProcessorHandler
+	Handlers *Handlers
+}
+
+type Handlers struct {
+	Payment    *handler.PaymentProcessorHandler
+	Preference *handler.PreferenceHandler
 }
 
 func NewApp(logger *slog.Logger) *App {
+	// =========================
+	// ENV
+	// =========================
+	mpToken := os.Getenv("MERCADO_PAGO_TOKEN")
+	if mpToken == "" {
+		log.Fatal("MERCADO_PAGO_TOKEN not set")
+	}
+
+	// =========================
 	// Infra
+	// =========================
 	db := repository.NewMySQLConnection()
 
-	// Adapters outbound
+	// =========================
+	// Payment - Adapters outbound
+	// =========================
 	paymentRepo := repository.NewPaymentProcessorRepositoryMySQL(db)
 	paymentSvc := service.NewPaymentCancelService(nil)
 
-	// Usecases
+	// =========================
+	// Payment - Usecases
+	// =========================
 	payCreateUC := usecase.NewPaymentCreateUseCase(paymentSvc, paymentRepo)
 	payGetUC := usecase.NewPaymentGetUseCase(paymentSvc, paymentRepo)
 
-	// Handler (inbound)
-	h := handler.NewPaymentProcessorHandler(payCreateUC, payGetUC)
+	// =========================
+	// Payment - Handler
+	// =========================
+	paymentHandler := handler.NewPaymentProcessorHandler(payCreateUC, payGetUC)
+
+	// =========================
+	// Preference - Adapters outbound
+	// =========================
+	preferenceRepo := repository.NewPreferenceRepositoryMySQL(db)
+	preferenceSvc, err := service.NewPreferenceCreateService(mpToken)
+	if err != nil {
+		log.Fatalf("Failed to create PreferenceCreateService: %v", err)
+	}
+
+	// =========================
+	// Preference - Usecases
+	// =========================
+	preferenceCreateUC := usecase.NewPreferenceCreateUseCase(preferenceSvc, preferenceRepo)
+
+	// =========================
+	// Preference - Handler
+	// =========================
+	preferenceHandler := handler.NewPreferenceHandler(preferenceCreateUC)
 
 	return &App{
-		PaymentHandler: h,
+		Handlers: &Handlers{
+			Payment:    paymentHandler,
+			Preference: preferenceHandler,
+		},
 	}
 }
