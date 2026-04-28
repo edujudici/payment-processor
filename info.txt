@@ -5,8 +5,8 @@ Backlog
     OK - Criar estrutura base para API
 
     OK - Utilizar o token de integração com o Mercado Pago
-    Em andamento - Criar preferencia para redirecionar o cliente para o Checkout Pro
-    - Criar Webhook para receber confirmação de pagamento
+    OK - Criar preferencia para redirecionar o cliente para o Checkout Pro
+    EM ANDAMENTO - Criar Webhook para receber confirmação de pagamento
     - Enviar notificação com dados de acesso ao sistema para o cliente
     - Tela de login para cliente utilizar serviço (e-mail e senha)
     - Autenticação com verificação de conta ativa
@@ -31,5 +31,23 @@ Fluxo
                 ->  Tela inicial
 
 
+PREFERENCE
+    return [
+        'id'                 => $preference->id,
+        'external_reference' => $preference->external_reference,
+        'init_point'         => App::environment('local')
+            ? $preference->sandbox_init_point
+            : $preference->init_point,
+    ];
 
-
+ORDER
+    return [
+        'user_id'                   => $cart['user']->id,
+        'preferenceId'              => $preference['id'],
+        'status'                    => $paid ? 'paid' : 'new',
+        'ord_protocol'              => self::generateProtocol(),
+        'ord_preference_init_point' => $preference['init_point'],
+        'ord_external_reference'    => $preference['external_reference'],
+        'ord_total'                 => $cart['total'],
+        'ord_subtotal'              => $cart['subtotal'],
+    ];

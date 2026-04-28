@@ -26,12 +26,10 @@ func NewRouter(app *bootstrap.App) http.Handler {
 	})
 
 	// Routes
-	// r.Route("/api/v1", func(r chi.Router) {
-	r.Get("/payments", app.Handlers.Payment.GetPayments)
-	r.Post("/payments", app.Handlers.Payment.CreatePayment)
-
-	r.Post("/preference", app.Handlers.Preference.CreatePreference)
-	// })
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/payments", app.Handlers.Payment.GetPayments)
+		r.Post("/payments", app.Handlers.Payment.CreatePayment)
+	})
 
 	return r
 }

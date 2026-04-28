@@ -5,9 +5,13 @@ services:
       target: dev
     volumes:
       - .:/app
-    ports:
-      - "8080:8080"
+    pexpose:
+      - 8080
     environment:
+      VIRTUAL_HOST: payment.escaliagora.com.br
+      VIRTUAL_PORT: 8080
+      LETSENCRYPT_HOST: payment.escaliagora.com.br
+      LETSENCRYPT_EMAIL: edujudici@gmail.com
       PORT: 8080
       DB_HOST: db
       DB_PORT: 3306
@@ -20,6 +24,7 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+      - proxy
 
   db:
     image: mysql:8.0
@@ -28,8 +33,8 @@ services:
       MYSQL_DATABASE: payment_processor
       MYSQL_USER: app
       MYSQL_PASSWORD: secret
-    ports:
-      - "3306:3306"
+      # ports:
+      # - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -41,19 +46,11 @@ services:
     networks:
       - app-network
 
-  adminer:
-    image: adminer
-    ports:
-      - "8081:8080"
-    environment:
-      ADMINER_DESIGN: pepa-linha
-    depends_on:
-      - db
-    networks:
-      - app-network
-
 networks:
   app-network:
+  proxy:
+    name: nginx-proxy
+    external: true
 
 volumes:
   db_data:

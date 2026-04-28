@@ -1,7 +1,10 @@
 package ports
 
-import "payment-processor/internal/payment/adapters/outbound/service"
+import (
+	"context"
+	"payment-processor/internal/payment/adapters/outbound/service"
+)
 
 type PaymentSvcInterface interface {
-	PaymentCancel(token string, req *service.BoletoCancelInput) (int, *service.BoletoCancelOutput, error)
+	PaymentCreate(ctx context.Context, req *service.PaymentCreateInput) (*service.PaymentCreateOutput, error)
 }

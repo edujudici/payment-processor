@@ -15,31 +15,47 @@ const (
 )
 
 type Payment struct {
-	ID           string
-	PreferenceID string
-	Amount       float64
-	Status       Status
-	Description  string
-	PaymentType  string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID                string
+	Protocol          string
+	Username          string
+	Surname           string
+	Email             string
+	Status            Status
+	Quantity          int
+	Total             float64
+	Subtotal          float64
+	Description       string
+	PreferenceID      string
+	ExternalReference string
+	InitPoint         string
+	SandboxInitPoint  string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
-func NewPayment(preferenceId string, amount float64, description, paymentType string) (*Payment, error) {
+func NewPayment(prot, name, surname, email string, qtdy int, total, stotal float64, desc, prefId, extRef, iPoint, sIPoint string) (*Payment, error) {
 
-	if amount <= 0 {
-		return nil, ErrInvalidAmount
+	if qtdy <= 0 {
+		return nil, ErrInvalidQuantity
 	}
 
 	return &Payment{
-		ID:           uuid.New().String(),
-		PreferenceID: preferenceId,
-		Amount:       amount,
-		Status:       StatusPending,
-		Description:  description,
-		PaymentType:  paymentType,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:                uuid.New().String(),
+		Protocol:          prot,
+		Username:          name,
+		Surname:           surname,
+		Email:             email,
+		Status:            StatusPending,
+		Quantity:          qtdy,
+		Total:             total,
+		Subtotal:          stotal,
+		Description:       desc,
+		PreferenceID:      prefId,
+		ExternalReference: extRef,
+		InitPoint:         iPoint,
+		SandboxInitPoint:  sIPoint,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 	}, nil
 }
 

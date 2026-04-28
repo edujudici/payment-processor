@@ -12,7 +12,6 @@ type paymentProcessorRepositoryMySQL struct {
 	db *sql.DB
 }
 
-// Garantia de implementação da interface
 var _ ports.PaymentRepository = (*paymentProcessorRepositoryMySQL)(nil)
 
 func NewPaymentProcessorRepositoryMySQL(db *sql.DB) ports.PaymentRepository {
@@ -23,7 +22,7 @@ func NewPaymentProcessorRepositoryMySQL(db *sql.DB) ports.PaymentRepository {
 
 func (r *paymentProcessorRepositoryMySQL) FindAll(ctx context.Context) ([]*domain.Payment, error) {
 	query := `
-		SELECT id, amount, status, created_at, updated_at, preference_id, description, payment_type
+		SELECT id, protocol, username, surname, status, quantity, total, subtotal, description, preference_id, external_reference, preference_init_point, preference_sandbox_init_point, created_at, updated_at
 		FROM payments
 	`
 
@@ -40,13 +39,20 @@ func (r *paymentProcessorRepositoryMySQL) FindAll(ctx context.Context) ([]*domai
 
 		err := rows.Scan(
 			&payment.ID,
-			&payment.Amount,
+			&payment.Protocol,
+			&payment.Username,
+			&payment.Surname,
 			&payment.Status,
+			&payment.Quantity,
+			&payment.Total,
+			&payment.Subtotal,
+			&payment.Description,
+			&payment.PreferenceID,
+			&payment.ExternalReference,
+			&payment.InitPoint,
+			&payment.SandboxInitPoint,
 			&payment.CreatedAt,
 			&payment.UpdatedAt,
-			&payment.PreferenceID,
-			&payment.Description,
-			&payment.PaymentType,
 		)
 
 		if err != nil {
@@ -65,7 +71,7 @@ func (r *paymentProcessorRepositoryMySQL) FindAll(ctx context.Context) ([]*domai
 
 func (r *paymentProcessorRepositoryMySQL) FindByID(ctx context.Context, id string) (*domain.Payment, error) {
 	query := `
-		SELECT id, amount, status, created_at, updated_at, preference_id, description, payment_type
+		SELECT id, protocol, username, surname, status, quantity, total, subtotal, description, preference_id, external_reference, preference_init_point, preference_sandbox_init_point, created_at, updated_at
 		FROM payments
 		WHERE id = ?
 	`
@@ -76,18 +82,25 @@ func (r *paymentProcessorRepositoryMySQL) FindByID(ctx context.Context, id strin
 
 	err := row.Scan(
 		&payment.ID,
-		&payment.Amount,
+		&payment.Protocol,
+		&payment.Username,
+		&payment.Surname,
 		&payment.Status,
+		&payment.Quantity,
+		&payment.Total,
+		&payment.Subtotal,
+		&payment.Description,
+		&payment.PreferenceID,
+		&payment.ExternalReference,
+		&payment.InitPoint,
+		&payment.SandboxInitPoint,
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
-		&payment.PreferenceID,
-		&payment.Description,
-		&payment.PaymentType,
 	)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil // padrão comum (não encontrado)
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -97,21 +110,29 @@ func (r *paymentProcessorRepositoryMySQL) FindByID(ctx context.Context, id strin
 
 func (r *paymentProcessorRepositoryMySQL) Save(ctx context.Context, payment *domain.Payment) error {
 	query := `
-		INSERT INTO payments (id, amount, status, created_at, updated_at, preference_id, description, payment_type)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO payments (id, protocol, username, surname, email, status, quantity, total, subtotal, description, preference_id, external_reference, preference_init_point, preference_sandbox_init_point, created_at, updated_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 	`
 
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
 		payment.ID,
-		payment.Amount,
+		payment.Protocol,
+		payment.Username,
+		payment.Surname,
+		payment.Email,
 		payment.Status,
+		payment.Quantity,
+		payment.Total,
+		payment.Subtotal,
+		payment.Description,
+		payment.PreferenceID,
+		payment.ExternalReference,
+		payment.InitPoint,
+		payment.SandboxInitPoint,
 		payment.CreatedAt,
 		payment.UpdatedAt,
-		payment.PreferenceID,
-		payment.Description,
-		payment.PaymentType,
 	)
 
 	if err != nil {

@@ -15,8 +15,7 @@ type App struct {
 }
 
 type Handlers struct {
-	Payment    *handler.PaymentProcessorHandler
-	Preference *handler.PreferenceHandler
+	Payment *handler.PaymentProcessorHandler
 }
 
 func NewApp(logger *slog.Logger) *App {
@@ -37,7 +36,10 @@ func NewApp(logger *slog.Logger) *App {
 	// Payment - Adapters outbound
 	// =========================
 	paymentRepo := repository.NewPaymentProcessorRepositoryMySQL(db)
-	paymentSvc := service.NewPaymentCancelService(nil)
+	paymentSvc, err := service.NewPaymentCreateService(mpToken)
+	if err != nil {
+		log.Fatalf("Failed to create PaymentCreateService: %v", err)
+	}
 
 	// =========================
 	// Payment - Usecases
@@ -50,29 +52,9 @@ func NewApp(logger *slog.Logger) *App {
 	// =========================
 	paymentHandler := handler.NewPaymentProcessorHandler(payCreateUC, payGetUC)
 
-	// =========================
-	// Preference - Adapters outbound
-	// =========================
-	preferenceRepo := repository.NewPreferenceRepositoryMySQL(db)
-	preferenceSvc, err := service.NewPreferenceCreateService(mpToken)
-	if err != nil {
-		log.Fatalf("Failed to create PreferenceCreateService: %v", err)
-	}
-
-	// =========================
-	// Preference - Usecases
-	// =========================
-	preferenceCreateUC := usecase.NewPreferenceCreateUseCase(preferenceSvc, preferenceRepo)
-
-	// =========================
-	// Preference - Handler
-	// =========================
-	preferenceHandler := handler.NewPreferenceHandler(preferenceCreateUC)
-
 	return &App{
 		Handlers: &Handlers{
-			Payment:    paymentHandler,
-			Preference: preferenceHandler,
+			Payment: paymentHandler,
 		},
 	}
 }

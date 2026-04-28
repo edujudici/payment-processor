@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"payment-processor/internal/payment/adapters/outbound/service"
 	"payment-processor/internal/payment/domain"
 	"time"
 )
@@ -12,37 +13,60 @@ const (
 )
 
 type CreatePaymentInput struct {
-	Amount       float64 `json:"amount"`
-	PreferenceID string  `json:"preference_id"`
-	Status       string  `json:"status"`
-	Description  string  `json:"description"`
-	PaymentType  string  `json:"payment_type"`
+	Item    Item   `json:"item"`
+	Payer   Payer  `json:"payer"`
+	BackURL string `json:"back_url"`
+}
+
+type Item struct {
+	ID         string  `json:"id"`
+	Title      string  `json:"title"`
+	Quantity   int     `json:"quantity"`
+	UnitPrice  float64 `json:"unit_price"`
+	CurrencyID string  `json:"currency_id"`
+}
+
+type Payer struct {
+	Name        string `json:"name"`
+	Surname     string `json:"surname"`
+	Email       string `json:"email"`
+	DateCreated string `json:"date_created"`
 }
 
 type CreatePaymentOutput struct {
-	ID          string    `json:"id"`
-	Status      string    `json:"status"`
-	CheckoutURL string    `json:"checkout_url"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID                string    `json:"id"`
+	InitPoint         string    `json:"init_point"`
+	SandboxInitPoint  string    `json:"sandbox_init_point"`
+	ExternalReference string    `json:"external_reference"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
-func ToPayment(input CreatePaymentInput) (*domain.Payment, error) {
+func ToPayment(prot, name, surname, email string, qtdy int, total, stotal float64, desc, prefId, extRef, iPoint, sIPoint string) (*domain.Payment, error) {
 	return domain.NewPayment(
-		input.PreferenceID,
-		input.Amount,
-		input.Description,
-		input.PaymentType,
+		prot,
+		name,
+		surname,
+		email,
+		qtdy,
+		total,
+		stotal,
+		desc,
+		prefId,
+		extRef,
+		iPoint,
+		sIPoint,
 	)
 }
 
 func FromPayment(payment *domain.Payment) *CreatePaymentOutput {
 	return &CreatePaymentOutput{
-		ID:          payment.ID,
-		Status:      string(payment.Status),
-		CheckoutURL: "https://checkout.mercadopago.com.br/redirect?pref_id=" + payment.PreferenceID,
-		CreatedAt:   payment.CreatedAt,
-		UpdatedAt:   payment.UpdatedAt,
+		ID:                payment.ID,
+		InitPoint:         payment.InitPoint,
+		SandboxInitPoint:  payment.SandboxInitPoint,
+		ExternalReference: payment.ExternalReference,
+		CreatedAt:         payment.CreatedAt,
+		UpdatedAt:         payment.UpdatedAt,
 	}
 }
 
@@ -52,4 +76,23 @@ func FromPayments(payments []*domain.Payment) *[]CreatePaymentOutput {
 		outputs[i] = *FromPayment(payment)
 	}
 	return &outputs
+}
+
+func MapItem(dtoItem Item) service.Item {
+	return service.Item{
+		ID:         dtoItem.ID,
+		Title:      dtoItem.Title,
+		Quantity:   dtoItem.Quantity,
+		UnitPrice:  dtoItem.UnitPrice,
+		CurrencyID: dtoItem.CurrencyID,
+	}
+}
+
+func MapPayer(dtoPayer Payer) service.Payer {
+	return service.Payer{
+		Name:        dtoPayer.Name,
+		Surname:     dtoPayer.Surname,
+		Email:       dtoPayer.Email,
+		DateCreated: dtoPayer.DateCreated,
+	}
 }
