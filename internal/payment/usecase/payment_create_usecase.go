@@ -45,9 +45,9 @@ func (uc *PaymentCreateUseCase) Execute(ctx context.Context, input dto.CreatePay
 		Item:  dto.MapItem(input.Item),
 		Payer: dto.MapPayer(input.Payer),
 		BackURLs: service.BackURLs{
-			Success: input.BackURL,
-			Failure: input.BackURL,
-			Pending: input.BackURL,
+			Success: input.BackURL + "/success",
+			Failure: input.BackURL + "/failure",
+			Pending: input.BackURL + "/pending",
 		},
 		AutoReturn:        "approved",
 		NotificationURL:   url + "/notification",
