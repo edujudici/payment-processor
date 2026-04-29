@@ -5,9 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -21,40 +18,76 @@ func NewHTTPServer(handler http.Handler, port string, logger *slog.Logger) *HTTP
 		port = "8080"
 	}
 
+	handler = withCORS(handler)
+
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      handler,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
 	return &HTTPServer{
 		logger: logger,
-		server: &http.Server{
-			Addr:         ":" + port,
-			Handler:      handler,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 15 * time.Second,
-			IdleTimeout:  60 * time.Second,
-		},
+		server: server,
 	}
 }
 
-func (s *HTTPServer) Start() {
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+func withCORS(next http.Handler) http.Handler {
+	allowedOrigins := map[string]bool{
+		"https://buscacep.escaliagora.com.br": true,
+		"http://localhost:3000":               true,
+		"http://localhost:5173":               true, // Vite
+		"http://127.0.0.1:3000":               true,
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *HTTPServer) Start(ctx context.Context) error {
+	errCh := make(chan error, 1)
 
 	go func() {
 		s.logger.Info("server starting", "addr", s.server.Addr)
 
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Error("server error", "error", err)
-			os.Exit(1)
+			errCh <- err
 		}
 	}()
 
-	<-done
-	s.logger.Info("server shutting down...")
+	select {
+	case <-ctx.Done():
+		s.logger.Info("shutdown signal received")
+	case err := <-errCh:
+		return err
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := s.server.Shutdown(ctx); err != nil {
-		s.logger.Error("shutdown error", "error", err)
+	s.logger.Info("shutting down server...")
+
+	if err := s.server.Shutdown(shutdownCtx); err != nil {
+		return err
 	}
 
 	s.logger.Info("server stopped")
+	return nil
 }
